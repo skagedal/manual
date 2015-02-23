@@ -7,6 +7,10 @@ module Manual
 
   DIRECTORY_ENTRIES = {}
 
+  def self.setsite(s)
+    @@site = s
+  end
+
   def self.traverse_data(entries, directory_sort = false, paths = [], key_paths = [], &block)
 
     entries.map do |entry|
@@ -69,7 +73,7 @@ module Manual
     def self.extract_data(filename)
       if File.exists?(filename) and !File.directory?(filename) and first3 = File.open(filename) { |fd| fd.read(3) } and first3 == '---'
         blah = filename.sub(/^_manual\//,'')
-        page = Jekyll::Page.new(@site, '_manual', File.dirname(blah), File.basename(blah))
+        page = Jekyll::Page.new(@@site, '_manual', File.dirname(blah), File.basename(blah))
         page.data
       else
         {}
@@ -91,6 +95,8 @@ module Manual
       destination = site.config['destination']
 
       manual_dir = '_manual'
+
+      Manual.setsite(site)
 
       # now we need to turn our raw input files into something for jekyll to process
       # everything is in a directory with it's name and all content is in index.html files
