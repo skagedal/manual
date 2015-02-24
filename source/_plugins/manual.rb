@@ -1,25 +1,38 @@
-require 'erb'
-require 'fileutils'
-require 'tmpdir'
-require 'pp'
+module Jekyll
+  class Page
+    def sort_name_fooo
+      d = dir.sub(/^\/manual/, '')
+      basename == 'index' ? d : "#{d}/#{basename}/"
+    end
+    alias orig_permalink permalink
+    def permalink
+      # sort_name.gsub(/\/[0-9]+[_-]/, '/')
+      permalink = orig_permalink
+      newPermalink = "/hej/#{permalink}"
+    end
+  end
+end
+
 
 module Manual
 
+=begin
   class ManualGenerator < Jekyll::Generator
     def generate(site)
       puts "Pages: ", site.pages.length
-      site.pages.each do |page|
+      site.pages.sort_by { |p| p.sort_name }.each do |page|
+        puts " - #{page.url}"
+
         puts " - #{page.name} (name):"
-        puts "   - base:      #{page.basename}"
-        puts "   - dir:       #{page.dir}"
-        puts "   - data:      #{page.data}"
-        puts "   - url:       #{page.url}"
-        page.data['permalink'] = '/trams' + page.url
-        puts "   - permalink: #{page.permalink}"
-        puts "   - url:       #{page.url}"
+        puts "   - base:       #{page.basename}"
+        puts "   - dir:        #{page.dir}"
+        puts "   - url:        #{page.url}"
+        puts "   - sort:       #{page.sort_name}"
+        puts "   - tmp_:       #{page.tmp_permalink}"
       end
     end
   end
+=end
 
   class ManualChildPageTag < Liquid::Tag
     def render(context)
