@@ -1,38 +1,39 @@
 module Jekyll
   class Page
-    def sort_name_fooo
-      d = dir.sub(/^\/manual/, '')
-      basename == 'index' ? d : "#{d}/#{basename}/"
+    def sort_name
+      dname = @dir.sub(/^\/manual/, '')
+      bname = File.basename(@name, ".*")
+      if bname == 'index'
+        dname
+      else
+        "#{dname}/#{bname}/"
+      end
     end
-    alias orig_permalink permalink
+    # alias orig_permalink permalink
     def permalink
-      # sort_name.gsub(/\/[0-9]+[_-]/, '/')
-      permalink = orig_permalink
-      newPermalink = "/hej/#{permalink}"
+      sort_name.gsub(/\/[0-9]+[_-]/, '/')
     end
   end
 end
 
 
 module Manual
-
-=begin
   class ManualGenerator < Jekyll::Generator
     def generate(site)
-      puts "Pages: ", site.pages.length
-      site.pages.sort_by { |p| p.sort_name }.each do |page|
-        puts " - #{page.url}"
-
-        puts " - #{page.name} (name):"
-        puts "   - base:       #{page.basename}"
-        puts "   - dir:        #{page.dir}"
-        puts "   - url:        #{page.url}"
-        puts "   - sort:       #{page.sort_name}"
-        puts "   - tmp_:       #{page.tmp_permalink}"
+      site.pages.each do |page| 
+        page.data['permalink']  = ''
       end
+
+      puts "Enabling tracing (but run jekyll with --trace)."
+
+      set_trace_func proc {
+        |event, file, line, id, binding, classname| 
+        if event == "call"  && caller.length > 500
+          fail "stack level too deep"
+        end
+      }
     end
   end
-=end
 
   class ManualChildPageTag < Liquid::Tag
     def render(context)
@@ -61,7 +62,6 @@ module Manual
         }
       //]]>
       </script>"
-
     end
 
   end
