@@ -14,24 +14,6 @@ module Manual
     site.pages.select{ |p| child_url?(p.url, url) }.sort_by{ |p| p.basename }
   end
 
-  class ManualPage < Jekyll::Page
-    def initialize(*args)
-      super
-    end
-
-    def child_to_url?(parent_url)
-      url.start_with?(parent_url) && parent_url.count('/') + 1 == url.count('/')
-    end
-
-    def child_to?(parent)
-      child_to_url?(parent.url)
-    end
-
-    def children()
-      @site.pages.select{ |p| p.child_to?(self) }.sort_by{ |p| p.dir }
-    end
-  end
-
   class ManualGenerator < Jekyll::Generator
     def generate(site)
       source = Pathname.new (site.config['source'])
@@ -42,10 +24,9 @@ module Manual
 
         manual_dir.find do |path|
           if path.file? 
-            puts path
             plink = Manual.make_permalink(path.relative_path_from(manual_dir).to_s)
          
-            page = ManualPage.new(site, '', path.dirname.to_s, path.basename.to_s)
+            page = Jekyll::Page.new(site, '', path.dirname.to_s, path.basename.to_s)
             page.data['permalink'] = plink
 
             site.pages << page
@@ -55,17 +36,47 @@ module Manual
     end
   end
 
-  # generates a big <dl> list of the manual page stucture
-
   class Tag_tree < Liquid::Tag
+    def join(children_html)
+      children_html.empty? ? "" : "<dl>\n" + children_html.join + "</dl>\n"
+    end
+
     def render(context)
-      ""
+      current_url = context['page.url']
+      site = context.registers[:site]
+
+      format_entry = lambda do |page|
+        url = page.url
+        title = page.data['title']
+        css = ""
+        children_html = ""
+        
+        children = Manual.find_children(url, site)
+  
+        if url == current_url
+          css = ' class="active"'
+        end
+        if current_url.start_with?(url) || Manual.child_url?(current_url, url)
+          children_html = join(children.map(&format_entry))
+        end
+
+        %{
+          <dt#{css}>
+            <a href='#{url}'>#{title}</a>
+          </dt>
+          <dd#{css}>
+            #{children_html}
+          </dd>
+        }
+      end
+
+      join(Manual.find_children('/', site).map(&format_entry))
     end
   end
 
   class Tag_children < Liquid::Tag
     def render(context)
-      page = context.registers[:page]       # for some stupid reason this is not a Jekyll::Page object
+      page = context.registers[:page]       # for some reason this is not a Jekyll::Page object
       site = context.registers[:site]
       children = Manual.find_children(page['url'], site)
       entries = children.map do |child|
